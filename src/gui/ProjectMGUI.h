@@ -111,6 +111,11 @@ public:
      */
     void OpenPresetSearch();
 
+    /**
+     * @brief Returns whether the quick preset search popup is currently visible.
+     */
+    bool PresetSearchOpen() const;
+
 private:
     void DrawPresetSearchPopup();
 
@@ -149,6 +154,8 @@ private:
     bool _presetSearchOpen{false}; //!< Quick search popup visibility flag.
     char _presetSearchQuery[256]{0}; //!< Quick search query buffer.
     std::vector<uint32_t> _presetSearchMatches; //!< Matched playlist item indices.
+    std::vector<std::string> _presetSearchDisplayNames; //!< Cached preset file names by playlist index.
+    std::vector<std::string> _presetSearchLowerNames; //!< Cached lower-cased full preset names by playlist index.
     int _presetSearchSelection{0}; //!< Selected match index inside _presetSearchMatches.
 
     Poco::Logger& _logger{Poco::Logger::get("ProjectMGUI")}; //!< The class logger.

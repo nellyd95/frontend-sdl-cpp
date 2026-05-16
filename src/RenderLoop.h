@@ -89,6 +89,8 @@ protected:
 
     int _renderWidth{0};
     int _renderHeight{0};
+    bool _presetLockOverrideActive{false}; //!< True when lock is forced while preset search popup is open.
+    bool _presetLockStateBeforeOverride{false}; //!< Stored lock state before forcing lock for preset search.
 
     ModifierKeyStates _keyStates; //!< Current "pressed" states of modifier keys
 

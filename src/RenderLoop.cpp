@@ -40,8 +40,25 @@ void RenderLoop::Run()
 
         PollEvents();
         CheckViewportSize();
+
+        const bool searchOpen = _projectMGui.PresetSearchOpen();
+        if (searchOpen && !_presetLockOverrideActive)
+        {
+            _presetLockStateBeforeOverride = projectm_get_preset_locked(_projectMHandle);
+            projectm_set_preset_locked(_projectMHandle, true);
+            _presetLockOverrideActive = true;
+        }
+        else if (!searchOpen && _presetLockOverrideActive)
+        {
+            projectm_set_preset_locked(_projectMHandle, _presetLockStateBeforeOverride);
+            _presetLockOverrideActive = false;
+        }
+
         _audioCapture.FillBuffer();
-        _projectMWrapper.RenderFrame();
+        if (!searchOpen)
+        {
+            _projectMWrapper.RenderFrame();
+        }
         _projectMGui.Draw();
 
         _sdlRenderingWindow.Swap();

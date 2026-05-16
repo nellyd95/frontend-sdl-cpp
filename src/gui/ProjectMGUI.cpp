@@ -235,13 +235,40 @@ void ProjectMGUI::OpenPresetSearch()
     _presetSearchOpen = true;
     _presetSearchQuery[0] = '\0';
     _presetSearchSelection = 0;
+
+    auto playlist = _projectMWrapper->Playlist();
+    auto playlistSize = projectm_playlist_size(playlist);
+    _presetSearchDisplayNames.assign(playlistSize, "");
+    _presetSearchLowerNames.assign(playlistSize, "");
+
+    for (uint32_t i = 0; i < playlistSize; ++i)
+    {
+        auto presetName = projectm_playlist_item(playlist, i);
+        if (!presetName)
+        {
+            continue;
+        }
+
+        std::string fullName = presetName;
+        projectm_playlist_free_string(presetName);
+
+        _presetSearchDisplayNames[i] = Poco::Path(fullName).getFileName();
+        _presetSearchLowerNames[i] = fullName;
+        std::transform(_presetSearchLowerNames[i].begin(), _presetSearchLowerNames[i].end(), _presetSearchLowerNames[i].begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    }
+
     RefreshPresetSearchMatches();
+}
+
+bool ProjectMGUI::PresetSearchOpen() const
+{
+    return _presetSearchOpen;
 }
 
 void ProjectMGUI::DrawPresetSearchPopup()
 {
     ImGui::SetNextWindowSize(ImVec2(800, 360), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
     bool open = _presetSearchOpen;
     if (!ImGui::Begin("Preset Search###PresetSearch", &open, ImGuiWindowFlags_NoCollapse))
@@ -272,12 +299,9 @@ void ProjectMGUI::DrawPresetSearchPopup()
     for (int i = 0; i < static_cast<int>(_presetSearchMatches.size()); ++i)
     {
         auto playlistIndex = _presetSearchMatches[i];
-        auto presetName = projectm_playlist_item(_projectMWrapper->Playlist(), playlistIndex);
-        std::string displayText = presetName ? Poco::Path(presetName).getFileName() : "<unknown>";
-        if (presetName)
-        {
-            projectm_playlist_free_string(presetName);
-        }
+        const std::string& displayText = _presetSearchDisplayNames[playlistIndex].empty()
+            ? std::string("<unknown>")
+            : _presetSearchDisplayNames[playlistIndex];
 
         if (ImGui::Selectable(displayText.c_str(), i == _presetSearchSelection))
         {
@@ -328,31 +352,19 @@ void ProjectMGUI::RefreshPresetSearchMatches()
 {
     _presetSearchMatches.clear();
 
-    auto playlist = _projectMWrapper->Playlist();
-    auto playlistSize = projectm_playlist_size(playlist);
+    auto playlistSize = static_cast<uint32_t>(_presetSearchLowerNames.size());
     std::string query = _presetSearchQuery;
     std::transform(query.begin(), query.end(), query.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     for (uint32_t i = 0; i < playlistSize; ++i)
     {
-        auto presetName = projectm_playlist_item(playlist, i);
-        if (!presetName)
-        {
-            continue;
-        }
-
-        std::string fullName = presetName;
-        projectm_playlist_free_string(presetName);
-
         if (query.empty())
         {
             _presetSearchMatches.push_back(i);
             continue;
         }
 
-        std::string lowerName = fullName;
-        std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-        if (lowerName.find(query) != std::string::npos)
+        if (_presetSearchLowerNames[i].find(query) != std::string::npos)
         {
             _presetSearchMatches.push_back(i);
         }
