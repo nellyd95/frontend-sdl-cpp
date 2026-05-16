@@ -180,12 +180,22 @@ void ProjectMGUI::Draw()
 
 bool ProjectMGUI::WantsKeyboardInput()
 {
+    if (!_visible && !_presetSearchOpen)
+    {
+        return false;
+    }
+
     auto& io = ImGui::GetIO();
     return io.WantCaptureKeyboard;
 }
 
 bool ProjectMGUI::WantsMouseInput()
 {
+    if (!_visible && !_presetSearchOpen)
+    {
+        return false;
+    }
+
     auto& io = ImGui::GetIO();
     return io.WantCaptureMouse;
 }
@@ -258,6 +268,7 @@ void ProjectMGUI::DrawPresetSearchPopup()
     ImGui::Text("Matches: %d", static_cast<int>(_presetSearchMatches.size()));
     ImGui::BeginChild("PresetSearchResults", ImVec2(0.0f, -ImGui::GetFrameHeightWithSpacing()));
 
+    bool activateSelection = false;
     for (int i = 0; i < static_cast<int>(_presetSearchMatches.size()); ++i)
     {
         auto playlistIndex = _presetSearchMatches[i];
@@ -271,14 +282,16 @@ void ProjectMGUI::DrawPresetSearchPopup()
         if (ImGui::Selectable(displayText.c_str(), i == _presetSearchSelection))
         {
             _presetSearchSelection = i;
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                activateSelection = true;
+            }
         }
     }
 
     ImGui::EndChild();
 
-    bool activateSelection = false;
-    const bool enterPressed = ImGui::IsKeyPressed(ImGuiKey_Enter, false) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false);
-    if (ImGui::Button("Load Selected") || (!windowAppearing && enterPressed))
+    if (ImGui::Button("Load Selected"))
     {
         activateSelection = true;
     }
