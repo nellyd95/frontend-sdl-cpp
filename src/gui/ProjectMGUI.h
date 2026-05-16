@@ -15,6 +15,8 @@
 
 #include <Poco/Util/Subsystem.h>
 
+#include <vector>
+
 struct ImFont;
 class ProjectMWrapper;
 class SDLRenderingWindow;
@@ -104,7 +106,16 @@ public:
      */
     void ShowHelpWindow();
 
+    /**
+     * @brief Opens the quick preset search popup.
+     */
+    void OpenPresetSearch();
+
 private:
+    void DrawPresetSearchPopup();
+
+    void RefreshPresetSearchMatches();
+
     float GetScalingFactor();
 
     static float GetClampedUserScalingFactor();
@@ -135,6 +146,10 @@ private:
     std::unique_ptr<ToastMessage> _toast; //!< Current toast to be displayed.
 
     bool _visible{false}; //!< Flag for settings window visibility.
+    bool _presetSearchOpen{false}; //!< Quick search popup visibility flag.
+    char _presetSearchQuery[256]{0}; //!< Quick search query buffer.
+    std::vector<uint32_t> _presetSearchMatches; //!< Matched playlist item indices.
+    int _presetSearchSelection{0}; //!< Selected match index inside _presetSearchMatches.
 
     Poco::Logger& _logger{Poco::Logger::get("ProjectMGUI")}; //!< The class logger.
 };

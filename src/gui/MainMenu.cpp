@@ -83,6 +83,10 @@ void MainMenu::Draw()
             {
                 _projectMWrapper.PresetFileNameToClipboard();
             }
+            if (ImGui::MenuItem("Preset Search...", "Enter"))
+            {
+                _gui.OpenPresetSearch();
+            }
 
             ImGui::EndMenu();
         }

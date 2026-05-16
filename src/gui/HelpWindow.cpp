@@ -158,6 +158,7 @@ void HelpWindow::FillKeyboardShortcutsTable()
         {"Last Played Preset (Back, smooth)", "Shift+Backspace"},
         {"Random Preset (immediate)", "r"},
         {"Random Preset (smooth)", "Shift+r"},
+        {"Preset Search", "Enter"},
         {"Lock Current Preset", "Spacebar"},
         {"Toggle Shuffle", "y"},
         {"Toggle Fullscreen", "Ctrl-f, Right Mouse"},

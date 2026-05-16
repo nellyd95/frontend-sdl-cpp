@@ -9,10 +9,13 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
 
+#include <Poco/Path.h>
 #include <Poco/NotificationCenter.h>
 
 #include <Poco/Util/Application.h>
 
+#include <algorithm>
+#include <cctype>
 #include <utility>
 
 const char* ProjectMGUI::name() const
@@ -124,7 +127,7 @@ bool ProjectMGUI::Visible() const
 void ProjectMGUI::Draw()
 {
     // Don't render UI at all if there's no need.
-    if (!_toast && !_visible)
+    if (!_toast && !_visible && !_presetSearchOpen)
     {
         return;
     }
@@ -164,6 +167,11 @@ void ProjectMGUI::Draw()
         _settingsWindow.Draw();
         _aboutWindow.Draw();
         _helpWindow.Draw();
+    }
+
+    if (_presetSearchOpen)
+    {
+        DrawPresetSearchPopup();
     }
 
     ImGui::Render();
@@ -210,6 +218,132 @@ void ProjectMGUI::ShowAboutWindow()
 void ProjectMGUI::ShowHelpWindow()
 {
     _helpWindow.Show();
+}
+
+void ProjectMGUI::OpenPresetSearch()
+{
+    _presetSearchOpen = true;
+    _presetSearchQuery[0] = '\0';
+    _presetSearchSelection = 0;
+    RefreshPresetSearchMatches();
+}
+
+void ProjectMGUI::DrawPresetSearchPopup()
+{
+    ImGui::SetNextWindowSize(ImVec2(800, 360), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+
+    bool open = _presetSearchOpen;
+    if (!ImGui::Begin("Preset Search###PresetSearch", &open, ImGuiWindowFlags_NoCollapse))
+    {
+        ImGui::End();
+        _presetSearchOpen = open;
+        return;
+    }
+
+    ImGuiInputTextFlags inputFlags = ImGuiInputTextFlags_AutoSelectAll;
+    if (ImGui::InputText("Find preset", _presetSearchQuery, IM_ARRAYSIZE(_presetSearchQuery), inputFlags))
+    {
+        _presetSearchSelection = 0;
+        RefreshPresetSearchMatches();
+    }
+
+    const bool windowAppearing = ImGui::IsWindowAppearing();
+    if (windowAppearing)
+    {
+        ImGui::SetKeyboardFocusHere(-1);
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Matches: %d", static_cast<int>(_presetSearchMatches.size()));
+    ImGui::BeginChild("PresetSearchResults", ImVec2(0.0f, -ImGui::GetFrameHeightWithSpacing()));
+
+    for (int i = 0; i < static_cast<int>(_presetSearchMatches.size()); ++i)
+    {
+        auto playlistIndex = _presetSearchMatches[i];
+        auto presetName = projectm_playlist_item(_projectMWrapper->Playlist(), playlistIndex);
+        std::string displayText = presetName ? Poco::Path(presetName).getFileName() : "<unknown>";
+        if (presetName)
+        {
+            projectm_playlist_free_string(presetName);
+        }
+
+        if (ImGui::Selectable(displayText.c_str(), i == _presetSearchSelection))
+        {
+            _presetSearchSelection = i;
+        }
+    }
+
+    ImGui::EndChild();
+
+    bool activateSelection = false;
+    const bool enterPressed = ImGui::IsKeyPressed(ImGuiKey_Enter, false) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter, false);
+    if (ImGui::Button("Load Selected") || (!windowAppearing && enterPressed))
+    {
+        activateSelection = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Close") || ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+    {
+        open = false;
+    }
+
+    if (!_presetSearchMatches.empty())
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow, false))
+        {
+            _presetSearchSelection = std::min(_presetSearchSelection + 1, static_cast<int>(_presetSearchMatches.size()) - 1);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow, false))
+        {
+            _presetSearchSelection = std::max(_presetSearchSelection - 1, 0);
+        }
+    }
+
+    if (activateSelection && !_presetSearchMatches.empty())
+    {
+        auto playlistIndex = _presetSearchMatches[_presetSearchSelection];
+        projectm_playlist_set_position(_projectMWrapper->Playlist(), playlistIndex, true);
+        open = false;
+    }
+
+    ImGui::End();
+    _presetSearchOpen = open;
+}
+
+void ProjectMGUI::RefreshPresetSearchMatches()
+{
+    _presetSearchMatches.clear();
+
+    auto playlist = _projectMWrapper->Playlist();
+    auto playlistSize = projectm_playlist_size(playlist);
+    std::string query = _presetSearchQuery;
+    std::transform(query.begin(), query.end(), query.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+    for (uint32_t i = 0; i < playlistSize; ++i)
+    {
+        auto presetName = projectm_playlist_item(playlist, i);
+        if (!presetName)
+        {
+            continue;
+        }
+
+        std::string fullName = presetName;
+        projectm_playlist_free_string(presetName);
+
+        if (query.empty())
+        {
+            _presetSearchMatches.push_back(i);
+            continue;
+        }
+
+        std::string lowerName = fullName;
+        std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (lowerName.find(query) != std::string::npos)
+        {
+            _presetSearchMatches.push_back(i);
+        }
+    }
 }
 
 float ProjectMGUI::GetScalingFactor()

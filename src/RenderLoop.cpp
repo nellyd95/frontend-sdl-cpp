@@ -343,6 +343,11 @@ void RenderLoop::KeyEvent(const SDL_KeyboardEvent& event, bool down)
             Poco::NotificationCenter::defaultCenter().postNotification(new PlaybackControlNotification(PlaybackControlNotification::Action::TogglePresetLocked));
             break;
 
+        case SDLK_RETURN:
+        case SDLK_KP_ENTER:
+            _projectMGui.OpenPresetSearch();
+            break;
+
         case SDLK_UP:
             // Increase beat sensitivity
             _projectMWrapper.ChangeBeatSensitivity(0.01f);
