@@ -14,6 +14,8 @@
 
 #include <SDL2/SDL_opengl.h>
 
+#include <regex>
+
 const char* SDLRenderingWindow::name() const
 {
     return "SDL2 Rendering Window";
@@ -396,14 +398,25 @@ void SDLRenderingWindow::UpdateWindowTitle()
         auto& app = Poco::Util::Application::instance();
         auto& projectMWrapper = app.getSubsystem<ProjectMWrapper>();
 
-        auto presetName = projectm_playlist_item(projectMWrapper.Playlist(), projectm_playlist_get_position(projectMWrapper.Playlist()));
+        auto currentPosition = projectm_playlist_get_position(projectMWrapper.Playlist());
+        auto presetName = projectm_playlist_item(projectMWrapper.Playlist(), currentPosition);
 
         if (presetName)
         {
             Poco::Path presetFile(presetName);
             projectm_playlist_free_string(presetName);
 
-            newTitle += " ➫ " + presetFile.getBaseName();
+            auto presetBaseName = presetFile.getBaseName();
+            std::string presetNumber = std::to_string(currentPosition + 1);
+
+            // If basename is like "MilkDrop2077.0001", use the trailing digits as preset number.
+            std::smatch match;
+            if (std::regex_match(presetBaseName, match, std::regex(R"(.*\.(\d+)$)")) && match.size() > 1)
+            {
+                presetNumber = match[1].str();
+            }
+
+            newTitle += " [" + presetNumber + "] -> " + presetBaseName;
         }
 
         if (projectm_get_preset_locked(projectMWrapper.ProjectM()))
@@ -461,3 +474,4 @@ void SDLRenderingWindow::OnConfigurationPropertyRemoved(const std::string& key)
         UpdateWindowTitle();
     }
 }
+

@@ -8,7 +8,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 project(projectMSDL
         LANGUAGES C CXX
-        VERSION 2.0.0
+        VERSION 2.0.1
         )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
