@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: dessant/repo-lockdown@v4
         with:
-          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          github-token: ${{ github.token }}
           issue-comment: >
             This repository does not accept bug reports. Please report any issues in the
             [main projectM repository](https://github.com/projectM-visualizer/projectm/issues/new/choose).

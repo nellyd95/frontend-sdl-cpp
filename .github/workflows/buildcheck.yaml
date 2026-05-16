@@ -97,7 +97,6 @@ jobs:
       USERNAME: projectM-visualizer
       VCPKG_EXE: ${{ github.workspace }}/vcpkg/vcpkg
       FEED_URL: https://nuget.pkg.github.com/projectM-visualizer/index.json
-      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/projectM-visualizer/index.json,readwrite"
 
 
     steps:
@@ -112,7 +111,18 @@ jobs:
         shell: pwsh
         run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.bat
 
+      - name: Configure vcpkg binary sources (public fallback)
+        shell: pwsh
+        run: |
+          if ("${{ secrets.VCPKG_PACKAGES_TOKEN }}" -ne "") {
+            "VCPKG_BINARY_SOURCES=clear;nuget,https://nuget.pkg.github.com/projectM-visualizer/index.json,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          } else {
+            "VCPKG_BINARY_SOURCES=clear;files,${{ github.workspace }}/vcpkg_cache,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/vcpkg_cache" | Out-Null
+          }
+
       - name: Add NuGet sources
+        if: ${{ secrets.VCPKG_PACKAGES_TOKEN != '' }}
         shell: pwsh
         run: |
           .$(${{ env.VCPKG_EXE }} fetch nuget) `
