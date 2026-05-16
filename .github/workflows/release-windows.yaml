@@ -41,6 +41,11 @@ jobs:
         shell: pwsh
         run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.bat
 
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure vcpkg binary sources (public fallback)
         shell: pwsh
         run: |
@@ -91,6 +96,8 @@ jobs:
           cmake -G Ninja `
             -S "${{ github.workspace }}/frontend-sdl2" `
             -B "${{ github.workspace }}/cmake-build-frontend-sdl2" `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_TOOLCHAIN_FILE="${Env:VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake" `
             -DVCPKG_TARGET_TRIPLET=x64-windows `
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" `

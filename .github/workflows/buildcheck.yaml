@@ -111,6 +111,11 @@ jobs:
         shell: pwsh
         run: ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.bat
 
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure vcpkg binary sources (public fallback)
         shell: pwsh
         run: |
@@ -146,7 +151,7 @@ jobs:
       - name: Build/Install libprojectM
         run: |
           mkdir cmake-build-libprojectm
-          cmake -G Ninja -S "${{ github.workspace }}/projectm" -B "${{ github.workspace }}/cmake-build-libprojectm" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-libprojectm" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=NO
+          cmake -G Ninja -S "${{ github.workspace }}/projectm" -B "${{ github.workspace }}/cmake-build-libprojectm" -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-libprojectm" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded" -DCMAKE_VERBOSE_MAKEFILE=YES -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=NO
           cmake --build "${{ github.workspace }}/cmake-build-libprojectm" --parallel
           cmake --install "${{ github.workspace }}/cmake-build-libprojectm"
 
@@ -159,7 +164,7 @@ jobs:
       - name: Build projectMSDL
         run: |
           mkdir cmake-build-frontend-sdl2
-          cmake -G Ninja -S "${{ github.workspace }}/frontend-sdl2" -B "${{ github.workspace }}/cmake-build-frontend-sdl2" -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static  -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend-sdl2" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded" -DCMAKE_VERBOSE_MAKEFILE=YES -DSDL2_LINKAGE=static -DBUILD_TESTING=YES
+          cmake -G Ninja -S "${{ github.workspace }}/frontend-sdl2" -B "${{ github.workspace }}/cmake-build-frontend-sdl2" -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static  -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install-libprojectm" -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install-frontend-sdl2" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded" -DCMAKE_VERBOSE_MAKEFILE=YES -DSDL2_LINKAGE=static -DBUILD_TESTING=YES
           cmake --build "${{ github.workspace }}/cmake-build-frontend-sdl2" --parallel
 
       - name: Package projectMSDL
